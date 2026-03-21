@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::camera::CameraError;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum RustfaceError {

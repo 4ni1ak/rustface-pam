@@ -10,7 +10,6 @@
 ///   - /etc/rustface/faces/ must exist with root:root 700 permissions
 ///   - /etc/rustface/models/seeta_fd_frontal_v1.0.bin
 ///   - /etc/rustface/models/arcface.onnx
-
 use std::path::PathBuf;
 
 use pam_rustface::{
@@ -31,15 +30,13 @@ fn main() {
         std::process::exit(1);
     }
 
-    let username = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| {
-            // Fall back to SUDO_USER env var
-            std::env::var("SUDO_USER").unwrap_or_else(|_| {
-                eprintln!("[enroll] ERROR: specify a username: sudo rustface-enroll <username>");
-                std::process::exit(1);
-            })
-        });
+    let username = std::env::args().nth(1).unwrap_or_else(|| {
+        // Fall back to SUDO_USER env var
+        std::env::var("SUDO_USER").unwrap_or_else(|_| {
+            eprintln!("[enroll] ERROR: specify a username: sudo rustface-enroll <username>");
+            std::process::exit(1);
+        })
+    });
 
     let model_dir = std::env::args()
         .nth(2)
@@ -66,18 +63,25 @@ fn main() {
 
     // Load detector and embedder
     eprintln!("[enroll] Loading models...");
-    let mut detector = FaceDetector::load(face_model_path.to_str().unwrap())
-        .unwrap_or_else(|e| { eprintln!("[enroll] ERROR loading detector: {e}"); std::process::exit(1); });
+    let mut detector = FaceDetector::load(face_model_path.to_str().unwrap()).unwrap_or_else(|e| {
+        eprintln!("[enroll] ERROR loading detector: {e}");
+        std::process::exit(1);
+    });
 
-    let mut embedder = FaceEmbedder::load(embed_model_path.to_str().unwrap())
-        .unwrap_or_else(|e| { eprintln!("[enroll] ERROR loading embedder: {e}"); std::process::exit(1); });
+    let mut embedder = FaceEmbedder::load(embed_model_path.to_str().unwrap()).unwrap_or_else(|e| {
+        eprintln!("[enroll] ERROR loading embedder: {e}");
+        std::process::exit(1);
+    });
 
     // Open camera — auto-detect IR camera if not specified
-    let device = std::env::args().nth(3)
+    let device = std::env::args()
+        .nth(3)
         .unwrap_or_else(|| pam_rustface::camera::auto_detect_ir_camera());
     eprintln!("[enroll] Camera: {device}");
-    let camera = IrCamera::open(&device)
-        .unwrap_or_else(|e| { eprintln!("[enroll] ERROR opening camera: {e}"); std::process::exit(1); });
+    let camera = IrCamera::open(&device).unwrap_or_else(|e| {
+        eprintln!("[enroll] ERROR opening camera: {e}");
+        std::process::exit(1);
+    });
 
     eprintln!("[enroll] Camera ready: {}x{}", camera.width, camera.height);
     eprintln!("[enroll] Look at the camera... ({DETECT_RETRIES} attempts)");
@@ -89,7 +93,10 @@ fn main() {
 
             let frame = match camera.capture_warmed_frame(WARMUP_FRAMES) {
                 Ok(f) => f,
-                Err(e) => { eprintln!("[enroll] Frame error: {e}"); continue; }
+                Err(e) => {
+                    eprintln!("[enroll] Frame error: {e}");
+                    continue;
+                }
             };
 
             let Some(region) = detector.detect(&frame) else {
@@ -107,7 +114,10 @@ fn main() {
                     eprintln!("[enroll] Embedding extracted — dim: {}", emb.dim());
                     break 'detect emb;
                 }
-                Err(e) => { eprintln!("[enroll] Embedding error: {e}"); continue; }
+                Err(e) => {
+                    eprintln!("[enroll] Embedding error: {e}");
+                    continue;
+                }
             }
         }
 

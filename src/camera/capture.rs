@@ -29,7 +29,12 @@ pub fn auto_detect_ir_camera() -> String {
         if let Ok(dev) = Device::with_path(path) {
             if let Ok(fmt) = dev.format() {
                 if is_grayscale8(&fmt.fourcc) {
-                    log::info!("Auto-detected IR camera: {path} ({:?} {}x{})", fmt.fourcc, fmt.width, fmt.height);
+                    log::info!(
+                        "Auto-detected IR camera: {path} ({:?} {}x{})",
+                        fmt.fourcc,
+                        fmt.width,
+                        fmt.height
+                    );
                     return path.clone();
                 }
             }
@@ -84,13 +89,13 @@ impl IrCamera {
     ///
     /// Stream is opened and closed per call — sufficient for PAM auth flow.
     pub fn capture_frame(&self) -> Result<GrayImage, CameraError> {
-        let mut stream =
-            Stream::with_buffers(&self.device, Type::VideoCapture, 4).map_err(|e| {
-                CameraError::StreamStart(e.to_string())
-            })?;
+        let mut stream = Stream::with_buffers(&self.device, Type::VideoCapture, 4)
+            .map_err(|e| CameraError::StreamStart(e.to_string()))?;
 
         // Skip the first frame — camera needs a warm-up; second frame is cleaner
-        let _ = stream.next().map_err(|e| CameraError::FrameCapture(e.to_string()))?;
+        let _ = stream
+            .next()
+            .map_err(|e| CameraError::FrameCapture(e.to_string()))?;
         let (buf, _meta) = stream
             .next()
             .map_err(|e| CameraError::FrameCapture(e.to_string()))?;
@@ -102,10 +107,8 @@ impl IrCamera {
     /// Capture the specified number of frames, return the last one.
     /// Skips `skip` frames for camera warm-up.
     pub fn capture_warmed_frame(&self, skip: u32) -> Result<GrayImage, CameraError> {
-        let mut stream =
-            Stream::with_buffers(&self.device, Type::VideoCapture, 4).map_err(|e| {
-                CameraError::StreamStart(e.to_string())
-            })?;
+        let mut stream = Stream::with_buffers(&self.device, Type::VideoCapture, 4)
+            .map_err(|e| CameraError::StreamStart(e.to_string()))?;
 
         let total = skip + 1;
         let mut last_buf: Option<Vec<u8>> = None;

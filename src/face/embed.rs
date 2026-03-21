@@ -51,7 +51,10 @@ impl FaceEmbedder {
 
         log::debug!("FaceEmbedder loaded — device: {device:?}, input: {input_name}");
 
-        Ok(Self { session, input_name })
+        Ok(Self {
+            session,
+            input_name,
+        })
     }
 
     /// Crop the face region from the image, normalize, and extract the embedding
@@ -61,8 +64,8 @@ impl FaceEmbedder {
         region: &FaceRegion,
     ) -> Result<Embedding, RustfaceError> {
         // 1. Crop face region
-        let crop = imageops::crop_imm(image, region.x, region.y, region.width, region.height)
-            .to_image();
+        let crop =
+            imageops::crop_imm(image, region.x, region.y, region.width, region.height).to_image();
 
         // 2. Resize to 112x112
         let resized = imageops::resize(&crop, FACE_SIZE, FACE_SIZE, imageops::FilterType::Lanczos3);

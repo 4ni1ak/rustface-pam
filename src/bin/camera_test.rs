@@ -21,7 +21,10 @@ fn main() {
         }
     };
 
-    eprintln!("[camera-test] Resolution: {}x{}", camera.width, camera.height);
+    eprintln!(
+        "[camera-test] Resolution: {}x{}",
+        camera.width, camera.height
+    );
     eprintln!("[camera-test] Capturing frame (3 warm-up frames)...");
 
     let frame: image::GrayImage = match camera.capture_warmed_frame(3) {
@@ -32,7 +35,11 @@ fn main() {
         }
     };
 
-    eprintln!("[camera-test] Frame captured: {}x{}", frame.width(), frame.height());
+    eprintln!(
+        "[camera-test] Frame captured: {}x{}",
+        frame.width(),
+        frame.height()
+    );
 
     if let Err(e) = frame.save(&output_path) {
         eprintln!("[camera-test] ERROR — failed to save PNG: {e}");
