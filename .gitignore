@@ -1,0 +1,6 @@
+/target/
+models/*.bin
+models/*.onnx
+SKILL.md
+*.mp4
+.claude/

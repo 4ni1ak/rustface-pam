@@ -1,0 +1,78 @@
+#!/bin/bash
+# rustface-pam — production kurulum scripti
+# Kullanım: sudo bash install.sh [--npu|--gpu]
+# Varsayılan: CPU backend
+
+set -e
+
+FEATURE_FLAG=""
+BACKEND="cpu"
+
+for arg in "$@"; do
+    case $arg in
+        --npu) FEATURE_FLAG="--features npu"; BACKEND="npu" ;;
+        --gpu) FEATURE_FLAG="--features gpu"; BACKEND="gpu" ;;
+    esac
+done
+
+echo "[install] Backend: $BACKEND"
+
+# Root kontrolü
+if [ "$(id -u)" -ne 0 ]; then
+    echo "[HATA] sudo bash install.sh"
+    exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Build
+echo "[install] Derleniyor (release $FEATURE_FLAG)..."
+cd "$SCRIPT_DIR"
+sudo -u "$SUDO_USER" cargo build --release $FEATURE_FLAG
+
+SO_SRC="$SCRIPT_DIR/target/release/libpam_rustface.so"
+SO_DST="/usr/lib/security/pam_rustface.so"
+
+# .so kur
+echo "[install] .so kopyalanıyor (atomik rename)..."
+# Önce geçici dosyaya kopyala, sonra atomik mv
+# Bu sayede sudo aktif .so'yu değiştirirken segfault olmaz
+cp "$SO_SRC" "${SO_DST}.new"
+chown root:root "${SO_DST}.new"
+chmod 755 "${SO_DST}.new"
+mv "${SO_DST}.new" "$SO_DST"
+
+# /etc/rustface dizini
+echo "[install] /etc/rustface/ dizinleri oluşturuluyor..."
+mkdir -p /etc/rustface/faces /etc/rustface/models
+chown -R root:root /etc/rustface/
+chmod 700 /etc/rustface/
+chmod 700 /etc/rustface/faces/
+chmod 755 /etc/rustface/models/
+
+# /etc/pam.d/sudo (eğer pam-test satırı varsa kaldır)
+PAM_FILE="/etc/pam.d/sudo"
+PAM_BACKUP="/etc/pam.d/sudo.install.bak"
+cp "$PAM_FILE" "$PAM_BACKUP"
+
+# pam-test satırını kaldır (varsa)
+sed -i '/pam_rustface.*debug=true/d' "$PAM_FILE"
+
+# Production satırını ekle (yoksa)
+PAM_PROD_LINE="auth  sufficient  /usr/lib/security/pam_rustface.so  threshold=0.6  timeout=3"
+if ! grep -q "pam_rustface.so" "$PAM_FILE"; then
+    sed -i "1s|^|${PAM_PROD_LINE}\n|" "$PAM_FILE"
+    echo "[install] PAM satırı eklendi."
+else
+    echo "[install] PAM satırı zaten mevcut."
+fi
+
+echo ""
+echo "[install] Kurulum tamamlandı!"
+echo ""
+echo "Sonraki adım — yüz kayıt:"
+echo "  sudo rustface-enroll $SUDO_USER"
+echo ""
+echo "Model dosyaları gerekli:"
+echo "  /etc/rustface/models/seeta_fd_frontal_v1.0.bin"
+echo "  /etc/rustface/models/arcface.onnx"

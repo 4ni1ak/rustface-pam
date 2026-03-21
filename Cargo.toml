@@ -1,0 +1,58 @@
+[package]
+name = "rustface-pam"
+version = "0.1.0"
+edition = "2021"
+description = "Linux PAM module for face authentication using an IR camera"
+license = "MIT"
+repository = "https://github.com/pervane/rustface-pam"
+keywords = ["pam", "face-recognition", "linux", "security", "ir-camera"]
+categories = ["authentication", "os::linux-apis"]
+
+[lib]
+name = "pam_rustface"
+# cdylib: PAM .so for the system; rlib: used by binaries in the same package
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "rustface-enroll"
+path = "src/bin/enroll.rs"
+
+[[bin]]
+name = "camera-test"
+path = "src/bin/camera_test.rs"
+
+[[bin]]
+name = "rustface-sim-test"
+path = "src/bin/sim_test.rs"
+
+# Feature flags — inference backend selection
+[features]
+default = []
+# Intel NPU (Core Ultra — AI Boost) via OpenVINO EP
+npu = ["ort/openvino"]
+# Intel Arc GPU (OpenCL) via OpenVINO EP
+gpu = ["ort/openvino"]
+# TEST ONLY — always returns PAM_SUCCESS, never use in production
+pam-test = []
+
+[dependencies]
+v4l = "0.14"
+rustface = "0.1"
+# ONNX Runtime — inference backend
+# "download-binaries" fetches the OnnxRuntime C library at build time
+# "openvino" enables the NPU/GPU execution provider (activated by npu/gpu features)
+ort = { version = "2.0.0-rc.12", features = ["download-binaries", "ndarray"] }
+ndarray = "0.17"
+image = { version = "0.25", default-features = false, features = ["png"] }
+thiserror = "2"
+log = "0.4"
+syslog = "7"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+panic = "abort"
