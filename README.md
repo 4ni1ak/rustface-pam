@@ -27,7 +27,7 @@ $ sudo apt list --installed
 ### 1. Clone and build
 
 ```bash
-git clone https://github.com/pervane/rustface-pam
+git clone https://github.com/4ni1ak/rustface-pam
 cd rustface-pam
 cargo build --release
 ```

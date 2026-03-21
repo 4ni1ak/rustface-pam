@@ -72,9 +72,11 @@ fn main() {
     let mut embedder = FaceEmbedder::load(embed_model_path.to_str().unwrap())
         .unwrap_or_else(|e| { eprintln!("[enroll] ERROR loading embedder: {e}"); std::process::exit(1); });
 
-    // Open camera
-    eprintln!("[enroll] Opening camera (/dev/video2)...");
-    let camera = IrCamera::open("/dev/video2")
+    // Open camera — auto-detect IR camera if not specified
+    let device = std::env::args().nth(3)
+        .unwrap_or_else(|| pam_rustface::camera::auto_detect_ir_camera());
+    eprintln!("[enroll] Camera: {device}");
+    let camera = IrCamera::open(&device)
         .unwrap_or_else(|e| { eprintln!("[enroll] ERROR opening camera: {e}"); std::process::exit(1); });
 
     eprintln!("[enroll] Camera ready: {}x{}", camera.width, camera.height);

@@ -30,8 +30,10 @@ fn main() {
     let store = FaceStore::default();
     let stored = store.load(&username).expect("No enrolled face found — run rustface-enroll first");
 
-    eprintln!("[sim-test] Opening camera...");
-    let camera = IrCamera::open("/dev/video2").expect("Failed to open camera");
+    let device = std::env::args().nth(2)
+        .unwrap_or_else(|| pam_rustface::camera::auto_detect_ir_camera());
+    eprintln!("[sim-test] Camera: {device}");
+    let camera = IrCamera::open(&device).expect("Failed to open camera");
 
     eprintln!("[sim-test] Look at the camera...");
     for attempt in 1..=5 {

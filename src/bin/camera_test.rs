@@ -6,7 +6,7 @@ fn main() {
 
     let device_path = std::env::args()
         .nth(1)
-        .unwrap_or_else(|| "/dev/video2".to_owned());
+        .unwrap_or_else(|| pam_rustface::camera::auto_detect_ir_camera());
     let output_path = std::env::args()
         .nth(2)
         .unwrap_or_else(|| "frame.png".to_owned());

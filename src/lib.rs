@@ -101,7 +101,7 @@ impl Default for Config {
         Self {
             threshold: 0.8,
             timeout_secs: 3,
-            device: "/dev/video2".to_owned(),
+            device: "auto".to_owned(),
             debug: false,
             face_model: "/etc/rustface/models/seeta_fd_frontal_v1.0.bin".to_owned(),
             embed_model: "/etc/rustface/models/arcface.onnx".to_owned(),
@@ -164,8 +164,13 @@ fn run_face_auth(username: &str, config: &Config) -> Result<bool, RustfaceError>
 
     let stored_emb = store.load(username)?;
 
-    // 2. Open camera
-    let camera = IrCamera::open(&config.device)?;
+    // 2. Open camera — "auto" triggers IR camera auto-detection
+    let device_path = if config.device == "auto" {
+        camera::capture::auto_detect_ir_camera()
+    } else {
+        config.device.clone()
+    };
+    let camera = IrCamera::open(&device_path)?;
 
     // 3. Load face detector and embedder
     let mut detector = FaceDetector::load(&config.face_model)

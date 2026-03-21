@@ -15,6 +15,31 @@ fn is_grayscale8(fourcc: &FourCC) -> bool {
     *fourcc == FourCC::new(b"Y800") || *fourcc == FourCC::new(b"GREY")
 }
 
+/// Scan /dev/video* and return the path of the first grayscale (IR) camera found.
+/// Falls back to DEFAULT_DEVICE if none found.
+pub fn auto_detect_ir_camera() -> String {
+    // Collect and sort /dev/video0..N
+    let mut candidates: Vec<String> = (0..16)
+        .map(|i| format!("/dev/video{i}"))
+        .filter(|p| std::path::Path::new(p).exists())
+        .collect();
+    candidates.sort();
+
+    for path in &candidates {
+        if let Ok(dev) = Device::with_path(path) {
+            if let Ok(fmt) = dev.format() {
+                if is_grayscale8(&fmt.fourcc) {
+                    log::info!("Auto-detected IR camera: {path} ({:?} {}x{})", fmt.fourcc, fmt.width, fmt.height);
+                    return path.clone();
+                }
+            }
+        }
+    }
+
+    log::warn!("No grayscale IR camera found, falling back to {DEFAULT_DEVICE}");
+    DEFAULT_DEVICE.to_owned()
+}
+
 /// IR camera wrapper — file descriptor managed via RAII.
 ///
 /// `Device` is held here; the stream is opened and closed per capture
