@@ -12,9 +12,9 @@ pub fn camera_open(path: &str) -> Result<IrCamera, camera::CameraError> {
     IrCamera::open(path)
 }
 
-use std::os::raw::{c_char, c_int};
 use pam::constants::{PAM_IGNORE, PAM_SUCCESS};
 use pam::handle::PamHandle;
+use std::os::raw::{c_char, c_int};
 
 /// PAM entry point — signature must match exactly
 #[no_mangle]
@@ -24,9 +24,7 @@ pub extern "C" fn pam_sm_authenticate(
     argc: c_int,
     argv: *const *const c_char,
 ) -> c_int {
-    let result = std::panic::catch_unwind(|| {
-        authenticate_inner(pamh, flags, argc, argv)
-    });
+    let result = std::panic::catch_unwind(|| authenticate_inner(pamh, flags, argc, argv));
     match result {
         Ok(r) => r,
         Err(_) => PAM_IGNORE,
@@ -123,14 +121,20 @@ impl Config {
             // SAFETY: PAM argc/argv contract — null-terminated string array
             let arg = unsafe {
                 let ptr = *argv.add(i);
-                if ptr.is_null() { continue; }
+                if ptr.is_null() {
+                    continue;
+                }
                 CStr::from_ptr(ptr).to_str().unwrap_or("")
             };
 
             if let Some(val) = arg.strip_prefix("threshold=") {
-                if let Ok(v) = val.parse::<f32>() { cfg.threshold = v; }
+                if let Ok(v) = val.parse::<f32>() {
+                    cfg.threshold = v;
+                }
             } else if let Some(val) = arg.strip_prefix("timeout=") {
-                if let Ok(v) = val.parse::<u64>() { cfg.timeout_secs = v; }
+                if let Ok(v) = val.parse::<u64>() {
+                    cfg.timeout_secs = v;
+                }
             } else if let Some(val) = arg.strip_prefix("device=") {
                 cfg.device = val.to_owned();
             } else if arg == "debug=true" || arg == "debug" {
@@ -152,8 +156,8 @@ impl Config {
 fn run_face_auth(username: &str, config: &Config) -> Result<bool, RustfaceError> {
     use camera::IrCamera;
     use face::{cosine_similarity, FaceDetector, FaceEmbedder};
-    use storage::FaceStore;
     use std::time::{Duration, Instant};
+    use storage::FaceStore;
 
     // 1. Check for enrolled face
     let store = FaceStore::default();
@@ -196,7 +200,9 @@ fn run_face_auth(username: &str, config: &Config) -> Result<bool, RustfaceError>
             }
         };
 
-        let Some(region) = detector.detect(&frame) else { continue };
+        let Some(region) = detector.detect(&frame) else {
+            continue;
+        };
 
         let live_emb = match embedder.embed(&frame, &region) {
             Ok(e) => e,
@@ -207,7 +213,10 @@ fn run_face_auth(username: &str, config: &Config) -> Result<bool, RustfaceError>
         };
 
         let sim = cosine_similarity(&live_emb, &stored_emb);
-        log::debug!("rustface-pam: similarity={sim:.3} threshold={}", config.threshold);
+        log::debug!(
+            "rustface-pam: similarity={sim:.3} threshold={}",
+            config.threshold
+        );
 
         if sim >= config.threshold {
             // Online learning: update stored embedding on high-confidence matches
@@ -231,7 +240,10 @@ fn blend_embeddings(
     new: &face::embed::Embedding,
     alpha: f32,
 ) -> face::embed::Embedding {
-    let blended: Vec<f32> = old.as_slice().iter().zip(new.as_slice().iter())
+    let blended: Vec<f32> = old
+        .as_slice()
+        .iter()
+        .zip(new.as_slice().iter())
         .map(|(o, n)| (1.0 - alpha) * o + alpha * n)
         .collect();
     // L2 normalize — required for cosine similarity to stay consistent

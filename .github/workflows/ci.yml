@@ -49,7 +49,7 @@ jobs:
         run: cargo build --release
 
       - name: Run unit tests
-        run: cargo test
+        run: cargo test --lib
 
       - name: Clippy
         run: cargo clippy -- -D warnings

@@ -8,11 +8,7 @@ pub enum PamHandle {}
 
 // pam_get_item is provided by the PAM linker
 extern "C" {
-    fn pam_get_item(
-        pamh: *const PamHandle,
-        item_type: c_int,
-        item: *mut *const c_void,
-    ) -> c_int;
+    fn pam_get_item(pamh: *const PamHandle, item_type: c_int, item: *mut *const c_void) -> c_int;
 }
 
 /// Get the username from the PAM handle.
