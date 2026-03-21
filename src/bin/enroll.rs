@@ -76,7 +76,7 @@ fn main() {
     // Open camera — auto-detect IR camera if not specified
     let device = std::env::args()
         .nth(3)
-        .unwrap_or_else(|| pam_rustface::camera::auto_detect_ir_camera());
+        .unwrap_or_else(pam_rustface::camera::auto_detect_ir_camera);
     eprintln!("[enroll] Camera: {device}");
     let camera = IrCamera::open(&device).unwrap_or_else(|e| {
         eprintln!("[enroll] ERROR opening camera: {e}");

@@ -35,7 +35,7 @@ fn main() {
 
     let device = std::env::args()
         .nth(2)
-        .unwrap_or_else(|| pam_rustface::camera::auto_detect_ir_camera());
+        .unwrap_or_else(pam_rustface::camera::auto_detect_ir_camera);
     eprintln!("[sim-test] Camera: {device}");
     let camera = IrCamera::open(&device).expect("Failed to open camera");
 

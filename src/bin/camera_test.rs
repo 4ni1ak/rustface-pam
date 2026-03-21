@@ -1,12 +1,12 @@
-/// camera-test — capture a frame from the IR camera and save it as PNG
-/// Usage: cargo run --bin camera-test [/dev/video2] [output.png]
+//! camera-test — capture a frame from the IR camera and save it as PNG
+//! Usage: cargo run --bin camera-test [/dev/video2] [output.png]
 
 fn main() {
     eprintln!("[camera-test] Starting...");
 
     let device_path = std::env::args()
         .nth(1)
-        .unwrap_or_else(|| pam_rustface::camera::auto_detect_ir_camera());
+        .unwrap_or_else(pam_rustface::camera::auto_detect_ir_camera);
     let output_path = std::env::args()
         .nth(2)
         .unwrap_or_else(|| "frame.png".to_owned());

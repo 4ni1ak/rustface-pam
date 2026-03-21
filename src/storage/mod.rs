@@ -20,10 +20,6 @@ impl FaceStore {
         }
     }
 
-    pub fn default() -> Self {
-        Self::new(FACES_DIR)
-    }
-
     fn user_path(&self, username: &str) -> PathBuf {
         self.base_path.join(format!("{username}.bin"))
     }
@@ -45,5 +41,11 @@ impl FaceStore {
     pub fn save(&self, username: &str, embedding: &Embedding) -> Result<(), RustfaceError> {
         let path = self.user_path(username);
         write::write_embedding(&path, embedding)
+    }
+}
+
+impl Default for FaceStore {
+    fn default() -> Self {
+        Self::new(FACES_DIR)
     }
 }
