@@ -49,8 +49,18 @@ echo "[install] /etc/rustface/ dizinleri oluşturuluyor..."
 mkdir -p /etc/rustface/faces /etc/rustface/models
 chown -R root:root /etc/rustface/
 chmod 700 /etc/rustface/
-chmod 700 /etc/rustface/faces/
+# 711: unprivileged PAM clients (screen locker runs as the user, not root)
+# must be able to open their own known-path .bin file. No listing (no read bit).
+# Each .bin is chowned to its own user + mode 600, so it's unreadable by other
+# local users — only the owning user (or root) can open it.
+chmod 711 /etc/rustface/faces/
 chmod 755 /etc/rustface/models/
+for f in /etc/rustface/faces/*.bin; do
+    [ -e "$f" ] || continue
+    user="$(basename "$f" .bin | sed 's/_backup$//')"
+    chown "$user:$user" "$f" 2>/dev/null || true
+    chmod 600 "$f"
+done
 
 # /etc/pam.d/sudo (eğer pam-test satırı varsa kaldır)
 PAM_FILE="/etc/pam.d/sudo"
