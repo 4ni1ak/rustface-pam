@@ -7,11 +7,13 @@ set -e
 
 FEATURE_FLAG=""
 BACKEND="cpu"
+ENABLE_LOGIN=0
 
 for arg in "$@"; do
     case $arg in
         --npu) FEATURE_FLAG="--features npu"; BACKEND="npu" ;;
         --gpu) FEATURE_FLAG="--features gpu"; BACKEND="gpu" ;;
+        --enable-login) ENABLE_LOGIN=1 ;;
     esac
 done
 
@@ -65,6 +67,21 @@ if ! grep -q "pam_rustface.so" "$PAM_FILE"; then
     echo "[install] PAM satırı eklendi."
 else
     echo "[install] PAM satırı zaten mevcut."
+fi
+
+# /etc/pam.d/system-login — login ekranı için yüz tanıma (opsiyonel)
+if [ "$ENABLE_LOGIN" = "1" ]; then
+    SL="/etc/pam.d/system-login"
+    cp "$SL" "${SL}.install.bak"
+    LINE="auth  sufficient  /usr/lib/security/pam_rustface.so  threshold=0.6  timeout=3  device=auto  min_uptime=120"
+    if ! grep -q "pam_rustface.so" "$SL"; then
+        # 'auth include system-auth' satırından önce ekle
+        sed -i "/^auth[[:space:]]\+include[[:space:]]\+system-auth/i ${LINE}" "$SL"
+        echo "[install] system-login'e face-auth satırı eklendi (min_uptime=120s)."
+        echo "[install] Backup: ${SL}.install.bak"
+    else
+        echo "[install] system-login zaten pam_rustface içeriyor, atlanıyor."
+    fi
 fi
 
 echo ""
